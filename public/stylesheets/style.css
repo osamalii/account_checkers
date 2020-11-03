@@ -1,0 +1,18 @@
+body {
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+.aliveAccount{
+  color: green;
+}
+.deadAccount{
+  color: red;
+}
+#accounts,#cards{
+  width: 80%;
+  height: 200px;
+  margin: 10px;
+}
