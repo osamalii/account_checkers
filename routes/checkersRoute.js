@@ -289,10 +289,10 @@ function wweRoute(account,res) {
             res.send(info);
         })
         .then(() => {
-            closePageAfterCheck(weePage);
+            closePageAfterCheck(wwePage);
         })
         .catch(err => {
-            closePageAfterCheck(weePage);
+            closePageAfterCheck(wwePage);
             console.log(err);
             res.status(500).json({
                 status: 'error',
