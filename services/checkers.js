@@ -1,3 +1,8 @@
+const axios = require('axios');
+const cheerio = require('cheerio');
+var qs = require('qs');
+var FormData = require('form-data');
+
 let spotifyChecker = async (account)=>{
     var checkResult = {
         validAccount: false,

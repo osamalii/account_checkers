@@ -1,9 +1,5 @@
 var express = require('express');
 var router = express.Router();
-const axios = require('axios');
-const cheerio = require('cheerio');
-var qs = require('qs');
-var FormData = require('form-data');
 const puppeteer = require('puppeteer');
 let checkersRoute = require('../services/checkers');
 
