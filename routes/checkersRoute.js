@@ -1,5 +1,9 @@
 var express = require('express');
 var router = express.Router();
+const axios = require('axios');
+const cheerio = require('cheerio');
+var qs = require('qs');
+var FormData = require('form-data');
 const puppeteer = require('puppeteer');
 let checkersRoute = require('../services/checkers');
 
@@ -59,29 +63,20 @@ router.post('/:checker',  function (req, res, next) {
 
 });
 
-function spotifyRoute(account,res,page) {
-  console.log(account);
-    var spotifyPage;
-  const check = (async ()=> {
-      // const spotifyBrowser = await puppeteer.launch({headless: ENVIR, args: ['--no-sandbox']});
-      const context = await browser.createIncognitoBrowserContext();
-      spotifyPage = await context.newPage();
-      return await checkersRoute.spotifyChecker(account.login,account.password,spotifyPage);
-  })()
-      .then(info =>{
-          res.send(info);
-      })
-      .then(() => {
-          closePageAfterCheck(spotifyPage);
-      })
-      .catch(err => {
-          closePageAfterCheck(spotifyPage);
-        console.log(err);
-        res.status(500).json({
-          status: 'error',
-          message: 'An error occurred trying to process your request',
+function spotifyRoute(account,res) {
+    const check = (async ()=> await checkersRoute.spotifyChecker(account))()
+        .then(info =>{
+            return res.send(info);
         })
-      });
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                status: 'error',
+                message: 'An error occurred trying to process your request',
+                accountError:account
+            }) // 500 error
+        });
+
 }
 
 function hotstarRoute(account,res) {
@@ -110,21 +105,12 @@ function hotstarRoute(account,res) {
 }
 
 function zee5Route(account,res) {
-    var zee5Page;
     console.log(account);
     const check = (async ()=>{
-        const context = await browser.createIncognitoBrowserContext();
-        zee5Page = await context.newPage();
-        return await checkersRoute.zee5Checker(account,zee5Page);
+        return await checkersRoute.zee5Checker(account);
     })()
-        .then(info =>{
-            res.send(info);
-        })
-        .then(() => {
-            closePageAfterCheck(zee5Page);
-        })
+        .then(info => res.send(info))
         .catch(err => {
-            closePageAfterCheck(zee5Page);
             console.log(err);
             res.status(500).json({
                 status: 'error',
@@ -134,21 +120,12 @@ function zee5Route(account,res) {
 }
 
 function altbalajiRoute(account,res){
-    var altbalajiPage;
     console.log(account);
     const check = (async ()=>{
-        const context = await browser.createIncognitoBrowserContext();
-        altbalajiPage = await context.newPage();
-        return await checkersRoute.altbalajiChecker(account,altbalajiPage);
+        return await checkersRoute.altbalajiChecker(account);
     })()
-        .then(info =>{
-            res.send(info);
-        })
-        .then(() => {
-            closePageAfterCheck(altbalajiPage);
-        })
+        .then(info =>res.send(info))
         .catch(err => {
-            closePageAfterCheck(altbalajiPage);
             console.log(err);
             res.status(500).json({
                 status: 'error',
@@ -158,21 +135,12 @@ function altbalajiRoute(account,res){
 };
 
 function vootRoute(account,res){
-    var vootPage;
     console.log(account);
     const check = (async ()=>{
-        const context = await browser.createIncognitoBrowserContext();
-        vootPage = await context.newPage();
-        return await checkersRoute.vootChecker(account,vootPage);
+        return await checkersRoute.vootChecker(account);
     })()
-        .then(info =>{
-            res.send(info);
-        })
-        .then(() => {
-            closePageAfterCheck(vootPage);
-        })
+        .then(info =>res.send(info))
         .catch(err => {
-            closePageAfterCheck(vootPage);
             console.log(err);
             res.status(500).json({
                 status: 'error',
@@ -206,21 +174,12 @@ function sonylivRoute(account,res){
 }
 
 function jiosaavnRoute(account,res){
-    var jiosaavnPage;
     console.log(account);
     const check = (async ()=>{
-        const context = await browser.createIncognitoBrowserContext();
-        jiosaavnPage = await context.newPage();
-        return await checkersRoute.jiosaavnChecker(account,jiosaavnPage);
+        return await checkersRoute.jiosaavnChecker(account);
     })()
-        .then(info =>{
-            res.send(info);
-        })
-        .then(() => {
-            closePageAfterCheck(jiosaavnPage);
-        })
+        .then(info =>res.send(info))
         .catch(err => {
-            closePageAfterCheck(jiosaavnPage);
             console.log(err);
             res.status(500).json({
                 status: 'error',
@@ -278,21 +237,12 @@ function pornhubRoute(account,res) {
 };
 
 function wweRoute(account,res) {
-    var wwePage;
     console.log(account);
     const check = (async ()=>{
-        const context = await browser.createIncognitoBrowserContext();
-        wwePage = await context.newPage();
-        return await checkersRoute.wweChecker(account,wwePage);
+        return await checkersRoute.wweChecker(account);
     })()
-        .then(info =>{
-            res.send(info);
-        })
-        .then(() => {
-            closePageAfterCheck(wwePage);
-        })
+        .then(info =>res.send(info))
         .catch(err => {
-            closePageAfterCheck(wwePage);
             console.log(err);
             res.status(500).json({
                 status: 'error',
